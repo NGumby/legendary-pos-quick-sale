@@ -1,0 +1,19 @@
+api_version = "2026-10"
+
+[[extensions]]
+type = "ui_extension"
+# Change the merchant-facing name of the extension in locales/en.default.json
+name = "Used Vinyl"
+uid = "444fd786-e426-d134-add0-95fe88042a017ff7335d"
+handle = "quick-sale-used-vinyl"
+description = "Used Vinyl"
+
+# module: file that contains your extension’s source code
+# target: location where your extension appears in POS
+[[extensions.targeting]]
+module = "./src/Tile.jsx"
+target = "pos.home.tile.render"
+
+[[extensions.targeting]]
+module = "./src/Modal.jsx"
+target = "pos.home.modal.render"

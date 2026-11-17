@@ -1,0 +1,19 @@
+api_version = "2026-10"
+
+[[extensions]]
+type = "ui_extension"
+# Change the merchant-facing name of the extension in locales/en.default.json
+name = "Used Game"
+uid = "9617b348-3b01-f0d9-3f1d-753bb2879ed153c36fce"
+handle = "quick-sale-used-game"
+description = "Used Game"
+
+# module: file that contains your extension’s source code
+# target: location where your extension appears in POS
+[[extensions.targeting]]
+module = "./src/Tile.jsx"
+target = "pos.home.tile.render"
+
+[[extensions.targeting]]
+module = "./src/Modal.jsx"
+target = "pos.home.modal.render"

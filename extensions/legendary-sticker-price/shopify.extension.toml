@@ -1,0 +1,16 @@
+api_version = "2026-10"
+
+[[extensions]]
+type = "ui_extension"
+name = "Update Price J4G"
+handle = "legendary-sticker-price"
+uid = "df32f356-4e5b-7446-a169-2f9c86772956cc9543db"
+description = "Update Price J4G"
+
+[[extensions.targeting]]
+target = "pos.cart.line-item-details.action.menu-item.render"
+module = "./src/StickerMenu.jsx"
+
+[[extensions.targeting]]
+target = "pos.cart.line-item-details.action.render"
+module = "./src/StickerModal.jsx"

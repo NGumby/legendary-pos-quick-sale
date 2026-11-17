@@ -1,0 +1,11 @@
+{
+  "name": "Store DVD Quick Sale",
+  "tile_subheading": "Enter price",
+  "modal_subheading": "Taxable custom sale",
+  "price_label": "Price",
+  "price_details": "Enter the selling price. The item title is filled automatically.",
+  "price_error": "Enter a price greater than 0.",
+  "add_to_cart": "Add to cart",
+  "added_to_cart": "{{title}} added to cart",
+  "add_error": "Could not add this sale. Try again."
+}

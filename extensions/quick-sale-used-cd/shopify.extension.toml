@@ -1,0 +1,19 @@
+api_version = "2026-10"
+
+[[extensions]]
+type = "ui_extension"
+# Change the merchant-facing name of the extension in locales/en.default.json
+name = "Used CD"
+uid = "3e331cf5-5af7-54ec-73fe-fe10c231589b794ebe06"
+handle = "quick-sale-used-cd"
+description = "Used CD"
+
+# module: file that contains your extension’s source code
+# target: location where your extension appears in POS
+[[extensions.targeting]]
+module = "./src/Tile.jsx"
+target = "pos.home.tile.render"
+
+[[extensions.targeting]]
+module = "./src/Modal.jsx"
+target = "pos.home.modal.render"

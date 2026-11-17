@@ -1,0 +1,19 @@
+api_version = "2026-10"
+
+[[extensions]]
+type = "ui_extension"
+# Change the merchant-facing name of the extension in locales/en.default.json
+name = "More Types"
+uid = "36bbd07c-a63e-84c8-3971-0ea5c11b64ff1d10c5e3"
+handle = "quick-sale-other"
+description = "More Types"
+
+# module: file that contains your extension’s source code
+# target: location where your extension appears in POS
+[[extensions.targeting]]
+module = "./src/Tile.jsx"
+target = "pos.home.tile.render"
+
+[[extensions.targeting]]
+module = "./src/Modal.jsx"
+target = "pos.home.modal.render"

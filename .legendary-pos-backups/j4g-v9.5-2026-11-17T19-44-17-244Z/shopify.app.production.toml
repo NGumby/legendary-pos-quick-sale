@@ -1,0 +1,22 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "47a22b6a0f634ce363abd9876b3e8a5d"
+application_url = "https://shopify.dev/apps/default-app-home"
+embedded = true
+name = "Legendary POS - Just4Games"
+
+[webhooks]
+api_version = "2027-01"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_locations,read_markets,write_metaobjects,write_products"
+
+[auth]
+redirect_urls = [ "https://shopify.dev/apps/default-app-home/api/auth" ]
+
+[build]
+automatically_update_urls_on_dev = true
+
+[sidekick]
+extensions_summary = "Help merchants with Just4Games retail POS quick-sale workflows, New and Used item formats, and location-specific sticker pricing."

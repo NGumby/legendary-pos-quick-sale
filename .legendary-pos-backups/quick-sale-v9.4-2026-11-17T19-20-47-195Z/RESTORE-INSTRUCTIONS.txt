@@ -1,0 +1,1 @@
+To restore, copy the backed up extension files from this directory back to the matching paths under your Shopify app project. Do not remove the entire extensions directory.
