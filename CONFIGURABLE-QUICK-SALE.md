@@ -46,7 +46,7 @@ Use the root script `publish-pos-version.ps1` from a **local checkout** (you can
 .\publish-pos-version.ps1 -Mode Stage -Version j4g-2026-11-18-01
 
 # Validate + publish a new ACTIVE production app version
-# Requires a clean Git checkout on main and a typed confirmation
+# Requires a clean Git checkout on main; publishes without prompting
 .\publish-pos-version.ps1 -Mode Publish -Version j4g-2026-11-18-02
 ```
 
@@ -54,7 +54,7 @@ Omit `-Version` to generate a UTC timestamped version name for Stage/Publish. Pa
 
 **Important:** `Stage` and `Publish` both create new versions. Use a different version name for each. To release the exact version already created with `Stage`, use `shopify app release --config production --version <staged-version>` instead of re-running `-Mode Publish` with its name.
 
-The script intentionally hardcodes the reviewed **production** app identity (`Legendary POS - Just4Games`, client ID ending in `b3e8a5d`) and always uses `--config production` when building, staging or publishing. The production identity must be deliberately updated in the script if the Shopify app changes. It refuses to stage or publish with uncommitted files. Publishing additionally refuses non-`main` branches and requires the exact `PUBLISH <version>` confirmation. Shopify CLI may request its own confirmation for adding/updating/removing extensions. The script does **not** bypass these prompts or automatically allow deletions.
+The script intentionally hardcodes the reviewed **production** app identity (`Legendary POS - Just4Games`, client ID ending in `b3e8a5d`) and always uses `--config production` when building, staging or publishing. The production identity must be deliberately updated in the script if the Shopify app changes. It refuses to stage or publish with uncommitted files. Publishing additionally refuses non-`main` branches, but no longer requires a typed confirmation. The Shopify deploy command uses `--allow-updates --no-input`, so after validation it automatically releases updates without Shopify confirmation prompts. **Extension/configuration deletions are intentionally blocked** (no `--allow-deletes`), and Shopify CLI fails rather than silently deleting data. An existing Shopify CLI login is required because `--no-input` cannot open interactive authentication.
 
 **Stage vs publish:** `Stage` runs `shopify app deploy --no-release` and does not affect the active app. To release an approved staged version later, use `shopify app release --config production --version <version>`. `Publish` runs `shopify app deploy` and activates that new version for installed stores. **Neither mode deploys an independently hosted web app.** Test the Android POS tile, saved settings, vendor metadata, and T-shirt inventory before activating production.
 
