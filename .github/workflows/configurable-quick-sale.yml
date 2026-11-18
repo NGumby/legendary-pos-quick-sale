@@ -9,6 +9,7 @@ on:
       - 'shared/pos/cart-tile-count.js'
       - 'extensions/quick-sale-*/src/Tile.jsx'
       - 'publish-pos-version.ps1'
+      - 'tests/publish-pos-version.test.ps1'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - 'extensions/**/package.json'
@@ -23,6 +24,7 @@ on:
       - 'shared/pos/cart-tile-count.js'
       - 'extensions/quick-sale-*/src/Tile.jsx'
       - 'publish-pos-version.ps1'
+      - 'tests/publish-pos-version.test.ps1'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - 'extensions/**/package.json'
@@ -79,3 +81,6 @@ jobs:
             exit 1
           }
           Write-Host 'PowerShell syntax passed.'
+      - name: Regression test Git pull SHA capture without deploying
+        shell: pwsh
+        run: ./tests/publish-pos-version.test.ps1
