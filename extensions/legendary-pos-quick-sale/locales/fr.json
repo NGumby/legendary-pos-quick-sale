@@ -1,11 +1,4 @@
 {
-  "name": "Vente rapide DVD",
-  "tile_subheading": "Entrer le prix",
-  "modal_subheading": "Vente personnalisée taxable",
-  "price_label": "Prix",
-  "price_details": "Entrez le prix de vente. Le titre de l'article est rempli automatiquement.",
-  "price_error": "Entrez un prix supérieur à 0.",
-  "add_to_cart": "Ajouter au panier",
-  "added_to_cart": "{{title}} ajouté au panier",
-  "add_error": "Impossible d'ajouter cette vente. Réessayez."
+  "name": "Vente rapide J4G",
+  "tile_subheading": "Ventes fournisseurs et paramètres"
 }
