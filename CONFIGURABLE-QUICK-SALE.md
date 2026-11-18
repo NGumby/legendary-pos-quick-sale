@@ -47,10 +47,12 @@ Use the root script `publish-pos-version.ps1` from a **local checkout** (you can
 
 # Validate + publish a new ACTIVE production app version
 # Requires a clean Git checkout on main and a typed confirmation
-.\publish-pos-version.ps1 -Mode Publish -Version j4g-2026-11-18-01
+.\publish-pos-version.ps1 -Mode Publish -Version j4g-2026-11-18-02
 ```
 
 Omit `-Version` to generate a UTC timestamped version name for Stage/Publish. Pass `-Message '...'` to add an internal Shopify release note. `-SkipInstall` skips `npm ci` only if dependencies are already installed; it never skips tests, config validation or the build.
+
+**Important:** `Stage` and `Publish` both create new versions. Use a different version name for each. To release the exact version already created with `Stage`, use `shopify app release --config production --version <staged-version>` instead of re-running `-Mode Publish` with its name.
 
 The script intentionally hardcodes the reviewed **production** app identity (`Legendary POS - Just4Games`, client ID ending in `b3e8a5d`) and always uses `--config production` when building, staging or publishing. The production identity must be deliberately updated in the script if the Shopify app changes. It refuses to stage or publish with uncommitted files. Publishing additionally refuses non-`main` branches and requires the exact `PUBLISH <version>` confirmation. Shopify CLI may request its own confirmation for adding/updating/removing extensions. The script does **not** bypass these prompts or automatically allow deletions.
 
