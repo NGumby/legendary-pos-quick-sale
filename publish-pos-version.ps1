@@ -173,6 +173,15 @@ try {
         'app', 'build', '--config', $ProductionConfigName
     )
 
+    # npm/build tools must not silently modify the release source after the
+    # first Git check. Re-check before any remote version is created.
+    if ($Mode -ne 'Validate') {
+        $checkedCommit = Assert-CleanSource -RequireMain:($Mode -eq 'Publish')
+        if ($checkedCommit -cne $gitCommit) {
+            throw 'Git HEAD changed during validation. Refusing to deploy.'
+        }
+    }
+
     if ($Mode -eq 'Validate') {
         Write-Host ''
         Write-Host 'VALIDATED: No Shopify app version was created or released.' -ForegroundColor Green
