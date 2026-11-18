@@ -129,3 +129,10 @@ If Legendary POS extensions are available in the Shopify **admin POS editor** bu
 5. Refresh/restart Shopify POS; confirm it is updated. If the admin editor adds the tile but the mobile app doesn't list it, use the admin smart-grid template as the working workaround while investigating device-side visibility.
 
 An absent extension in the device add-app catalog is not the same as a failing `pos.home.tile.render` source module. Once the extension is visible in the admin editor, the tile target is registered; mobile listing can depend on POS embedding, permissions, location templates, sync and Shopify POS version.
+
+
+### Fixed: false Git HEAD change after a successful build
+
+An older version of the publisher let `git pull --ff-only` status output (for example, `Already up to date.`) leak into the `Sync-SourceBeforeRelease` function's PowerShell output. When the caller assigned the result to `$gitCommit`, PowerShell captured an array of status lines plus the commit SHA. The final SHA comparison incorrectly reported a changed Git HEAD even when no commit changed. Git output is now written directly to the console, and the returned value is validated as exactly one 40-character SHA. A mocked PowerShell regression test in `tests/publish-pos-version.test.ps1` checks the behavior without running a deployment.
+
+After updating this script once with `git pull --ff-only`, run `.\publish-pos-version.ps1 -Mode Publish`. No need to reset your working tree or bypass Git safeguards. If your last run ended with `Git HEAD changed during validation`, that attempt **did not deploy** a new version.
