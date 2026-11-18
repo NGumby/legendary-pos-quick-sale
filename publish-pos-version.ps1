@@ -82,10 +82,18 @@ function Assert-CleanSource {
         throw 'The script must be executed from inside the legendary-pos-quick-sale repository.'
     }
 
-    $changes = @(& $git status --porcelain --untracked-files=all)
+    $changes = @(& $git status --porcelain=v1 --untracked-files=all)
     if ($LASTEXITCODE -ne 0) { throw 'Unable to read Git working tree status.' }
     if ($changes.Count -gt 0) {
-        throw 'Git working tree is not clean. Commit or stash changes before creating an app version.'
+        Write-Host ''
+        Write-Host 'Git changes blocking the release:' -ForegroundColor Yellow
+        foreach ($entry in $changes) {
+            Write-Host ('  ' + $entry) -ForegroundColor Yellow
+        }
+        Write-Host 'Git status codes: ?? = untracked, M = modified, D = deleted, A = added.' -ForegroundColor Yellow
+        Write-Host 'Inspect with: git status --short; git diff; git diff --cached' -ForegroundColor Yellow
+        Write-Host 'Keep intentional changes by committing them. Otherwise restore/discard only reviewed paths.' -ForegroundColor Yellow
+        throw 'Git working tree is not clean. No version was deployed.'
     }
 
     $branch = & $git symbolic-ref --quiet --short HEAD
@@ -202,6 +210,19 @@ try {
     }
 
     if ($Mode -eq 'Validate') {
+        # Validate is intentionally allowed on a dirty checkout, but proactively
+        # show which files would block a subsequent Stage/Publish invocation.
+        $git = Resolve-Tool 'git'
+        $pending = @(& $git status --porcelain=v1 --untracked-files=all)
+        if ($LASTEXITCODE -ne 0) { throw 'Unable to read Git working tree status after validation.' }
+        if ($pending.Count -gt 0) {
+            Write-Host ''
+            Write-Host 'WARNING: Validation passed, but these Git changes must be resolved before publishing:' -ForegroundColor Yellow
+            foreach ($entry in $pending) {
+                Write-Host ('  ' + $entry) -ForegroundColor Yellow
+            }
+            Write-Host 'Review them using: git status --short' -ForegroundColor Yellow
+        }
         Write-Host ''
         Write-Host 'VALIDATED: No Shopify app version was created or released.' -ForegroundColor Green
         return
