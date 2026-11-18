@@ -36,7 +36,7 @@ These entries are defaults **only if** there is no saved configuration. Do not o
 
 ## Validate, stage and publish from Windows PowerShell
 
-Use the root script `publish-pos-version.ps1` from a **local checkout** (you can launch it from any directory). It requires Git, Node.js 22.12+, npm, a current Shopify CLI, and Shopify authentication. By default it runs `npm ci`, all `tests/*.test.mjs` tests, config validation for **both** `shopify.app.toml` and `shopify.app.production.toml`, and a production app build. Any nonzero exit code aborts the release.
+Use the root script `publish-pos-version.ps1` from a **local checkout** (you can launch it from any directory). It requires Git, Node.js 22.12+, **pnpm or Corepack**, a current Shopify CLI, and Shopify authentication. By default it runs `pnpm install --frozen-lockfile` from the committed `pnpm-lock.yaml`, all `tests/*.test.mjs` tests, config validation for **both** `shopify.app.toml` and `shopify.app.production.toml`, and a production app build. Any nonzero exit code aborts the release.
 
 ```powershell
 # Safe checks only; does not create a version
@@ -50,7 +50,7 @@ Use the root script `publish-pos-version.ps1` from a **local checkout** (you can
 .\publish-pos-version.ps1 -Mode Publish -Version j4g-2026-11-18-02
 ```
 
-Omit `-Version` to generate a UTC timestamped version name for Stage/Publish. Pass `-Message '...'` to add an internal Shopify release note. `-SkipInstall` skips `npm ci` only if dependencies are already installed; it never skips tests, config validation or the build.
+Omit `-Version` to generate a UTC timestamped version name for Stage/Publish. Pass `-Message '...'` to add an internal Shopify release note. `-SkipInstall` skips the frozen pnpm installation only if dependencies are already installed; it never skips tests, config validation or the build.
 
 **Important:** `Stage` and `Publish` both create new versions. Use a different version name for each. To release the exact version already created with `Stage`, use `shopify app release --config production --version <staged-version>` instead of re-running `-Mode Publish` with its name.
 
@@ -59,3 +59,11 @@ The script intentionally hardcodes the reviewed **production** app identity (`Le
 **Stage vs publish:** `Stage` runs `shopify app deploy --no-release` and does not affect the active app. To release an approved staged version later, use `shopify app release --config production --version <version>`. `Publish` runs `shopify app deploy` and activates that new version for installed stores. **Neither mode deploys an independently hosted web app.** Test the Android POS tile, saved settings, vendor metadata, and T-shirt inventory before activating production.
 
 See [Shopify CLI app deploy](https://shopify.dev/docs/api/shopify-cli/app/app-deploy) and [Shopify CLI app config validate](https://shopify.dev/docs/api/shopify-cli/app/app-config-validate).
+
+### Dependency installation and lockfile
+
+This repository uses **pnpm** workspaces (15 extension packages) with `pnpm-lock.yaml` as the authoritative lockfile. The previous `package-lock.json` was outdated and could not satisfy `npm ci`; it has been removed to prevent mixed lockfiles.
+
+The release script attempts `pnpm` first and falls back to `corepack pnpm` (included with supported Node.js releases). If neither is available, install pnpm globally with `npm install -g pnpm`. **Do not use `npm ci` for this project.**
+
+If you add or update dependencies later, run `pnpm install` once and commit the updated `pnpm-lock.yaml`. For staging and publishing, the script always uses `--frozen-lockfile` and will refuse to resolve uncommitted dependency changes.
