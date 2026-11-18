@@ -36,7 +36,7 @@ These entries are defaults **only if** there is no saved configuration. Do not o
 
 ## Validate, stage and publish from Windows PowerShell
 
-Use the root script `publish-pos-version.ps1` from a **local checkout** (you can launch it from any directory). It requires Git, Node.js 22.12+, **pnpm or Corepack**, a current Shopify CLI, and Shopify authentication. By default it runs `pnpm install --frozen-lockfile` from the committed `pnpm-lock.yaml`, all `tests/*.test.mjs` tests, config validation for **both** `shopify.app.toml` and `shopify.app.production.toml`, and a production app build. Any nonzero exit code aborts the release.
+Use the root script `publish-pos-version.ps1` from a **local checkout** (you can launch it from any directory). **Stage** and **Publish** automatically run `git pull --ff-only` on the current branch's configured upstream **before** reading production configuration, installing dependencies, validating, or building. Publish requires the `main` branch; Validate does not pull or alter Git. It requires Git, Node.js 22.12+, **pnpm or Corepack**, a current Shopify CLI, and Shopify authentication. By default it runs `pnpm install --frozen-lockfile` from the committed `pnpm-lock.yaml`, all `tests/*.test.mjs` tests, config validation for **both** `shopify.app.toml` and `shopify.app.production.toml`, and a production app build. Any nonzero exit code aborts the release.
 
 ```powershell
 # Safe checks only; does not create a version
@@ -67,6 +67,12 @@ This repository uses **pnpm** workspaces (15 extension packages) with `pnpm-lock
 The release script attempts `pnpm` first and falls back to `corepack pnpm` (included with supported Node.js releases). If neither is available, install pnpm globally with `npm install -g pnpm`. **Do not use `npm ci` for this project.**
 
 If you add or update dependencies later, run `pnpm install` once and commit the updated `pnpm-lock.yaml`. For staging and publishing, the script always uses `--frozen-lockfile` and will refuse to resolve uncommitted dependency changes.
+
+### Automatic Git update during Stage and Publish
+
+The release script checks for uncommitted changes, verifies the branch has a configured upstream, then automatically runs `git pull --ff-only`. A non-fast-forward update, missing upstream, network/authentication error, or dirty checkout stops the release. It does not use `--force`, stash edits, or create a merge commit. After pulling, it rechecks the clean checkout and uses the updated source and production app config for validation and deployment.
+
+You still need **one manual `git pull --ff-only`** to obtain a new version of the script on an existing Windows checkout. After that, `.\publish-pos-version.ps1 -Mode Publish` pulls `origin/main` (or whichever upstream your local `main` tracks) automatically. `-Mode Stage` pulls the tracked upstream of its current branch; `-Mode Validate` does not pull.
 
 ### Git working tree is not clean after validation
 
