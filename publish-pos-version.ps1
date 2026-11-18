@@ -6,6 +6,7 @@
     Run from anywhere; the script operates in its own repository directory.
     Uses the explicit "production" Shopify app configuration for builds and releases.
     Default mode validates only and NEVER creates or releases a version.
+    Stage and Publish first pull the tracked Git branch with --ff-only.
 
 .EXAMPLE
     .\publish-pos-version.ps1
@@ -112,8 +113,35 @@ function Assert-CleanSource {
     return $commit.Trim()
 }
 
+function Sync-SourceBeforeRelease {
+    param([switch]$RequireMain)
+
+    # Refuse to pull over local edits or from the wrong branch. Never use a
+    # forced update, reset, stash, or an implicit merge commit.
+    $null = Assert-CleanSource -RequireMain:$RequireMain
+    $git = Resolve-Tool 'git'
+    $upstream = & $git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}'
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($upstream)) {
+        throw 'Current Git branch has no tracking upstream. Configure its remote upstream before publishing.'
+    }
+    $upstream = $upstream.Trim()
+
+    Invoke-Checked -Title "Pull latest source from $upstream (fast-forward only)" -Executable $git -Arguments @(
+        'pull', '--ff-only'
+    )
+
+    # Return the exact fetched commit to associate the Shopify version with.
+    return Assert-CleanSource -RequireMain:$RequireMain
+}
+
 Push-Location -LiteralPath $PSScriptRoot
 try {
+    # Pull FIRST, before reading app config, installing dependencies, or
+    # building. Identity checks and validation must use the updated files.
+    $gitCommit = ''
+    if ($Mode -ne 'Validate') {
+        $gitCommit = Sync-SourceBeforeRelease -RequireMain:($Mode -eq 'Publish')
+    }
     $requiredFiles = @(
         'package.json',
         'pnpm-lock.yaml',
@@ -136,11 +164,6 @@ try {
     }
     if (-not $appNameMatch.Success -or $appNameMatch.Groups[1].Value -cne $ExpectedProductionName) {
         throw 'Production app name does not match Legendary POS - Just4Games. Refusing to deploy.'
-    }
-
-    $gitCommit = ''
-    if ($Mode -ne 'Validate') {
-        $gitCommit = Assert-CleanSource -RequireMain:($Mode -eq 'Publish')
     }
 
     Write-Host 'Legendary POS - Just4Games release checks' -ForegroundColor Cyan
