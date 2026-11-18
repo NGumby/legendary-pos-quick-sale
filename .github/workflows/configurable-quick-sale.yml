@@ -1,0 +1,25 @@
+name: Configurable Quick Sale unit tests
+
+on:
+  pull_request:
+    paths:
+      - 'extensions/legendary-pos-quick-sale/**'
+      - 'tests/configurable-quick-sales.test.mjs'
+      - '.github/workflows/configurable-quick-sale.yml'
+  push:
+    paths:
+      - 'extensions/legendary-pos-quick-sale/**'
+      - 'tests/configurable-quick-sales.test.mjs'
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run unit tests
+        run: node --test tests/configurable-quick-sales.test.mjs
