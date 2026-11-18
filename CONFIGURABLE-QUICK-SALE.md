@@ -117,3 +117,15 @@ All 11 J4G smart-grid tiles display a native numeric `itemCount` badge when thei
 The badge updates when the cart changes, disappears when its count is zero, and resets with the cart after checkout. Quantities are counted, not the number of distinct lines. It is **not** a daily sales counter, total sold since opening, or inventory count. Native Shopify catalog-product tiles and third-party extensions (such as Freebees) cannot be modified through this app. The vendor's identity still appears in the product name and its private line-item properties; the separate vendor caption is removed from the sale modal.
 
 See [Shopify POS tile's `itemCount`](https://shopify.dev/docs/api/pos-ui-extensions/2026-07/web-components/actions/tile) and [cart subscriptions](https://shopify.dev/docs/api/pos-ui-extensions/2026-10/target-apis/contextual-apis/cart-api).
+
+## POS tablet tile visibility
+
+If Legendary POS extensions are available in the Shopify **admin POS editor** but the app is absent from **Add tile > Apps** on an Android/iOS POS device:
+
+1. Check the app production config contains `[pos]` with `embedded = true`. The top-level `embedded = true` is the Shopify Admin embedding setting and is **not** a substitute for the separate POS setting. This repository now declares both in development and production TOML files. See [Shopify app configuration: pos](https://shopify.dev/docs/apps/build/cli-for-apps/app-configuration#pos).
+2. Publish a **new production version** using `./publish-pos-version.ps1 -Mode Publish` (in PowerShell, `.\publish-pos-version.ps1 -Mode Publish`). A Git commit alone doesn't update the app configuration on installed shops.
+3. Confirm the app is installed and the POS extension is activated under **Shopify admin > Point of Sale > POS editor > Apps**; the tile must be present in the **smart-grid template assigned to the device's location**, and changes to the template must be saved.
+4. Confirm the tablet's POS staff role allows **Customize smart grid**, **Manage POS UI extensions**, and **Use apps that work with Shopify POS**, when available. These are distinct POS permissions.
+5. Refresh/restart Shopify POS; confirm it is updated. If the admin editor adds the tile but the mobile app doesn't list it, use the admin smart-grid template as the working workaround while investigating device-side visibility.
+
+An absent extension in the device add-app catalog is not the same as a failing `pos.home.tile.render` source module. Once the extension is visible in the admin editor, the tile target is registered; mobile listing can depend on POS embedding, permissions, location templates, sync and Shopify POS version.
