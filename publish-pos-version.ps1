@@ -13,7 +13,8 @@
     .\publish-pos-version.ps1 -Mode Publish -Version j4g-2026-11-18-02
 
 .NOTES
-    Requires Node.js 22.12+, npm, Git and Shopify CLI, with Shopify authentication.
+    Requires Node.js 22.12+, pnpm (or Corepack), Git and Shopify CLI,
+    with Shopify authentication. Dependencies are locked by pnpm-lock.yaml.
     Shopify app deploy creates an app version for config/extensions, not a hosted web server.
 #>
 [CmdletBinding()]
@@ -107,7 +108,8 @@ Push-Location -LiteralPath $PSScriptRoot
 try {
     $requiredFiles = @(
         'package.json',
-        'package-lock.json',
+        'pnpm-lock.yaml',
+        'pnpm-workspace.yaml',
         'shopify.app.toml',
         'shopify.app.production.toml',
         'tests/configurable-quick-sales.test.mjs'
@@ -140,20 +142,37 @@ try {
     Write-Host ("Directory: $PSScriptRoot")
 
     $node = Resolve-Tool 'node'
-    $npm = Resolve-Tool 'npm'
     $shopify = Resolve-Tool 'shopify'
 
     Invoke-Checked -Title 'Node.js version' -Executable $node -Arguments @('--version')
     Invoke-Checked -Title 'Shopify CLI version' -Executable $shopify -Arguments @('version')
 
     if (-not $SkipInstall) {
-        Invoke-Checked -Title 'Install locked npm dependencies' -Executable $npm -Arguments @('ci')
+        # pnpm-workspace.yaml and pnpm-lock.yaml are the maintained dependency
+        # source for ALL 15 extensions. npm's old lock file was incomplete.
+        # Prefer an installed pnpm.cmd on Windows; fall back to Corepack,
+        # which ships with supported Node.js releases.
+        $installer = ''
+        $installArgs = @('install', '--frozen-lockfile')
+        try {
+            $installer = Resolve-Tool 'pnpm'
+        }
+        catch {
+            try {
+                $installer = Resolve-Tool 'corepack'
+                $installArgs = @('pnpm', 'install', '--frozen-lockfile')
+            }
+            catch {
+                throw 'pnpm or Corepack is required. Install pnpm with npm install -g pnpm, then retry.'
+            }
+        }
+        Invoke-Checked -Title 'Install frozen pnpm workspace dependencies' -Executable $installer -Arguments $installArgs
     }
     else {
         if (-not (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'node_modules') -PathType Container)) {
             throw '-SkipInstall was requested but node_modules does not exist. Run without -SkipInstall.'
         }
-        Write-Host 'Skipping npm ci; using existing node_modules.' -ForegroundColor Yellow
+        Write-Host 'Skipping pnpm install; using existing node_modules.' -ForegroundColor Yellow
     }
 
     $testPaths = @(Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'tests') -File -Filter '*.test.mjs' |
