@@ -1,6 +1,6 @@
 # Configurable Just4Games Quick Sale
 
-The `J4G Quick Sale` home-screen smart-grid tile opens a menu of merchant-configured sale types. Use **Quick Sale Settings** inside its modal to add, edit, copy, disable, and reorder entries. Configurations are shared across POS devices through an app-owned Shopify metaobject (`$app:configurable_quick_sales/default`), separate from the existing New/Used format settings.
+The `J4G Vendors` home-screen smart-grid tile opens a menu of merchant-configured sale types. Use **Vendor Settings** inside its modal to add, edit, copy, disable, and reorder entries. Configurations are shared across POS devices through an app-owned Shopify metaobject (`$app:configurable_quick_sales/default`), separate from the existing New/Used format settings.
 
 ## Starter menu
 
@@ -17,7 +17,7 @@ These entries are defaults **only if** there is no saved configuration. Do not o
 - Fixed-price sales add custom sale items without showing a keypad.
 - Catalog-mode entries call `shopify.cart.addLineItem`, not `addCustomSale`, so the existing Shopify product's price and inventory rules apply.
 - Add & Close and Add & Next attach private `_J4G Vendor`, `_J4G Category`, and `_J4G Sale Type` line-item properties, rolling back newly created items if metadata attachment fails. These properties do **not** populate Shopify's standard Product Vendor reporting automatically: vendor settlements require a separate report aggregating them.
-- Optional UPC or manual Title are added as visible properties.
+- The J4G Vendors sale screen shows only the selected sale type, price keypad (for variable sales), and Add buttons. UPC, item title, and the separate vendor caption are deliberately hidden; vendor/category metadata remains in private cart properties for consignment reporting.
 - Changing settings requires saving; changes are loaded by other devices when the tile next opens. A local cache may preload the screen, but the remote store configuration must load successfully before sales are enabled.
 - Settings persistence checks the remote `updatedAt` field before writing to reduce accidental stale overwrites. This is not atomic concurrency control. Avoid simultaneous edits from multiple tablets.
 - Shopify does not create unlimited new physical smart-grid tiles at runtime. New sale types appear as buttons inside this configurable Quick Sale menu.
@@ -99,3 +99,15 @@ git status --short
 ```
 
 The `git restore` command above discards only local edits to that one *generated* declaration file; inspect its diff first if you added custom typing code. After `git pull`, Shopify CLI will regenerate ignored type declarations on build. If `git status --short` still lists anything, review it before publishing; don't disable the publisher's clean working tree protection.
+
+## J4G home tile count badges
+
+All 11 J4G smart-grid tiles display a native numeric `itemCount` badge when their matching quantity in the **current POS cart** is greater than zero:
+
+- **J4G Vendors:** totals vendor-specific sales identified by private `_J4G Sale Source` metadata (including linked Shopify product sales through this workflow).
+- **J4G - New / J4G - Used:** totals new/used quick-sale units identified by `_J4G Condition` and the quick-sale source metadata.
+- **Individual format tiles** (Used DVD, New DVD, etc.): totals matching `_J4G Sale Type` units sold through the existing J4G quick-sale extensions.
+
+The badge updates when the cart changes, disappears when its count is zero, and resets with the cart after checkout. Quantities are counted, not the number of distinct lines. It is **not** a daily sales counter, total sold since opening, or inventory count. Native Shopify catalog-product tiles and third-party extensions (such as Freebees) cannot be modified through this app. The vendor's identity still appears in the product name and its private line-item properties; the separate vendor caption is removed from the sale modal.
+
+See [Shopify POS tile's `itemCount`](https://shopify.dev/docs/api/pos-ui-extensions/2026-07/web-components/actions/tile) and [cart subscriptions](https://shopify.dev/docs/api/pos-ui-extensions/2026-10/target-apis/contextual-apis/cart-api).

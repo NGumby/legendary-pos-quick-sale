@@ -5,6 +5,9 @@ on:
     paths:
       - 'extensions/legendary-pos-quick-sale/**'
       - 'tests/configurable-quick-sales.test.mjs'
+      - 'tests/pos-tile-count.test.mjs'
+      - 'shared/pos/cart-tile-count.js'
+      - 'extensions/quick-sale-*/src/Tile.jsx'
       - 'publish-pos-version.ps1'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
@@ -16,6 +19,9 @@ on:
     paths:
       - 'extensions/legendary-pos-quick-sale/**'
       - 'tests/configurable-quick-sales.test.mjs'
+      - 'tests/pos-tile-count.test.mjs'
+      - 'shared/pos/cart-tile-count.js'
+      - 'extensions/quick-sale-*/src/Tile.jsx'
       - 'publish-pos-version.ps1'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
@@ -34,7 +40,7 @@ jobs:
         with:
           node-version: '22'
       - name: Run unit tests
-        run: node --test tests/configurable-quick-sales.test.mjs
+        run: node --test tests/*.test.mjs
 
   dependency-lock:
     runs-on: ubuntu-latest

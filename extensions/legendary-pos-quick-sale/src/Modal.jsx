@@ -23,8 +23,6 @@ function App() {
   const [editor, setEditor] = useState(copy(EMPTY));
   const [editingId, setEditingId] = useState('');
   const [price, setPrice] = useState('');
-  const [upc, setUpc] = useState('');
-  const [itemTitle, setItemTitle] = useState('');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
@@ -126,7 +124,7 @@ function App() {
   }
   function openSale(id) {
     if (dirty) {setError('Save or discard settings before selling.');return;}
-    setSelected(id);setPrice('');setUpc('');setItemTitle('');
+    setSelected(id);setPrice('');
     setNotice('');setError('');setScreen('sell');
   }
   function press(key) {
@@ -143,11 +141,8 @@ function App() {
     let uuid = '';
     try {
       if (shopify.cart.current.value?.editable === false) throw new Error('Cart is not editable.');
-      const properties = {
-        ...payload.properties,
-        ...(upc.trim() ? {UPC:upc.trim().slice(0,64)} :
-          itemTitle.trim() ? {Title:itemTitle.trim().slice(0,180)} : {}),
-      };
+      // Vendor/category tracking stays in private line-item properties; no UPC or item-title entry needed.
+      const properties = payload.properties;
       if (payload.method === 'variant') {
         // Product price, tax, availability and inventory are managed by Shopify.
         uuid = await shopify.cart.addLineItem(payload.variantId,1);
@@ -169,7 +164,7 @@ function App() {
         }
       }
       shopify.toast.show('Added '+saleLabel(activeSale));
-      setPrice('');setUpc('');setItemTitle('');
+      setPrice('');
       if (!keepOpen) window.close();
     } catch(e) {setError(e.message || 'Could not add sale.');}
     finally {setBusy(false);submitLock.current=false;}
@@ -182,7 +177,7 @@ function App() {
   );
   const settingsView = (
     <s-stack gap="base">
-      <s-heading>Quick Sale Settings</s-heading>
+      <s-heading>Vendor Settings</s-heading>
       {!initialized && <s-banner tone="info" heading="First-time setup: review the sample sale types, then Save settings."/>}
       <s-text color="subdued">Manage sale types for all Just4Games POS tablets. New types appear in the Quick Sale menu without a redeploy.</s-text>
       {config.sales.map((s,i) => (
@@ -257,13 +252,12 @@ function App() {
         ))}
       </s-stack>
       {!config.sales.some(s=>s.enabled) && <s-text>No enabled sale types. Open Settings to add one.</s-text>}
-      <s-button variant="secondary" onClick={()=>{setScreen('settings');setError('');setNotice('');}}>⚙ Quick Sale Settings</s-button>
+      <s-button variant="secondary" onClick={()=>{setScreen('settings');setError('');setNotice('');}}>⚙ Vendor Settings</s-button>
     </s-stack>
   );
   const saleView = activeSale && (
     <s-stack gap="base">
       <s-heading>{saleLabel(activeSale)}</s-heading>
-      <s-text color="subdued">Vendor: {activeSale.vendor}</s-text>
       {activeSale.priceMode==='variable' && (
         <s-stack gap="small">
           <s-heading>Price: ${price||'0.00'} CAD</s-heading>
@@ -282,8 +276,6 @@ function App() {
       )}
       {activeSale.priceMode==='fixed' && <s-heading>Price: ${activeSale.fixedPrice} CAD</s-heading>}
       {activeSale.priceMode==='catalog' && <s-text>Shopify product: current catalog price and available inventory</s-text>}
-      <s-text-field label="UPC (optional)" value={upc} maxLength={64} onInput={e=>{setUpc(valueOf(e));if(valueOf(e))setItemTitle('');}}/>
-      {!upc.trim() && <s-text-field label="Item title (optional)" value={itemTitle} maxLength={180} onInput={e=>setItemTitle(valueOf(e))}/>}
       <s-stack direction="inline" gap="base">
         <s-button variant="secondary" disabled={busy} onClick={()=>{setScreen('menu');setError('');}}>Back</s-button>
         <s-button variant="secondary" loading={busy} disabled={busy || (activeSale.priceMode==='variable' && priceCents(price)===null)} onClick={()=>add(false)}>Add & Close</s-button>
@@ -292,7 +284,7 @@ function App() {
     </s-stack>
   );
   return (
-    <s-page heading="J4G Quick Sale" subheading="Configurable vendor sales">
+    <s-page heading="J4G Vendors" subheading="Vendor sales">
       <s-scroll-box>
         <s-stack padding="base" gap="base">
           {alerts}
