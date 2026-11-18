@@ -34,3 +34,13 @@ shared/types/graphql
 *.njsproj
 *.sln
 *.sw?
+# Shopify CLI-generated extension artifacts (the source files remain tracked)
+# Do not commit extension bundler outputs or generated type declarations.
+/extensions/*/manifest.json
+/extensions/*/shopify.d.ts
+
+# The source images are tracked under extensions/app-home/assets/.
+# The Shopify build copies these files to the app-home extension root.
+/extensions/app-home/graphql-logo.png
+/extensions/app-home/polaris-icon.png
+/extensions/app-home/preact-logo.png

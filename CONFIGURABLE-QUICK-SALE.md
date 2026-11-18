@@ -81,3 +81,21 @@ git diff --cached
 ```
 
 **Do not blindly run `git reset --hard` or `git clean -fd`.** If the changes belong in the next POS version, review, commit, and push them before publishing. If the changes are local-only, use `git stash push --include-untracked -m "local changes before POS publish"` to preserve them temporarily, publish the committed `main` branch, then restore with `git stash pop` when appropriate. Stashed changes are *not* included in the Shopify version; avoid this route if they are needed for deployment. If a tool keeps changing a tracked file during validation, investigate that file rather than bypassing the safety check.
+
+### Generated Shopify CLI files after Validate
+
+`shopify app build` creates temporary `extensions/*/manifest.json` outputs, copies the three demo logo images from `extensions/app-home/assets/` to the extension root, and regenerates `extensions/*/shopify.d.ts` typings. Those artifacts are now ignored and the previously tracked type declarations were untracked in Git so future builds do not dirty the checkout. This change removes the generated typings from source control, **not** the actual POS extension code.
+
+**One-time update on a checkout that was validated before this change:**
+
+```powershell
+cd D:\Git\legendary-pos-quick-sale
+git diff -- extensions/legendary-pos-quick-sale/shopify.d.ts
+# Only if that diff contains generated type declarations:
+git restore -- extensions/legendary-pos-quick-sale/shopify.d.ts
+git pull --ff-only
+git status --short
+.\publish-pos-version.ps1 -Mode Publish
+```
+
+The `git restore` command above discards only local edits to that one *generated* declaration file; inspect its diff first if you added custom typing code. After `git pull`, Shopify CLI will regenerate ignored type declarations on build. If `git status --short` still lists anything, review it before publishing; don't disable the publisher's clean working tree protection.
