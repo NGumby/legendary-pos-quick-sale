@@ -245,7 +245,9 @@ try {
         '--config', $ProductionConfigName,
         '--version', $Version,
         '--message', $Message,
-        '--source-control-url', "https://github.com/NGumby/legendary-pos-quick-sale/commit/$gitCommit"
+        '--source-control-url', "https://github.com/NGumby/legendary-pos-quick-sale/commit/$gitCommit",
+        '--allow-updates',
+        '--no-input'
     )
 
     if ($Mode -eq 'Stage') {
@@ -265,14 +267,10 @@ try {
     Write-Host "New active Shopify version: $Version"
     Write-Host "Git commit: $gitCommit"
     Write-Host 'This will replace the currently active Shopify app version (config and extensions).'
-    $expected = "PUBLISH $Version"
-    $answer = Read-Host "Type exactly [$expected] to continue"
-    if ($answer -cne $expected) {
-        throw 'Publication cancelled. No Shopify app version was deployed.'
-    }
-
-    # Do not set --allow-deletes, --allow-updates, or --no-input:
-    # Shopify CLI must remain free to request its own safety confirmation.
+    # Publish without interactive confirmation. Only allow adding/updating
+    # extensions and configuration. Deliberately omit --allow-deletes:
+    # a destructive change must fail rather than silently removing an extension.
+    Write-Host 'Non-interactive release: updates allowed; extension deletions blocked.' -ForegroundColor Yellow
     Invoke-Checked -Title "Deploy and release production Shopify version $Version" -Executable $shopify -Arguments $deployArgs
     Write-Host ''
     Write-Host "PUBLISHED: $Version to $ExpectedProductionName." -ForegroundColor Green
