@@ -1,15 +1,19 @@
-name: Configurable Quick Sale unit tests
+name: Configurable Quick Sale checks
 
 on:
   pull_request:
     paths:
       - 'extensions/legendary-pos-quick-sale/**'
       - 'tests/configurable-quick-sales.test.mjs'
+      - 'publish-pos-version.ps1'
+      - 'CONFIGURABLE-QUICK-SALE.md'
       - '.github/workflows/configurable-quick-sale.yml'
   push:
     paths:
       - 'extensions/legendary-pos-quick-sale/**'
       - 'tests/configurable-quick-sales.test.mjs'
+      - 'publish-pos-version.ps1'
+      - '.github/workflows/configurable-quick-sale.yml'
 
 jobs:
   unit-tests:
@@ -23,3 +27,25 @@ jobs:
           node-version: '22'
       - name: Run unit tests
         run: node --test tests/configurable-quick-sales.test.mjs
+
+  powershell-syntax:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse PowerShell release script (no deployment)
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path './publish-pos-version.ps1'),
+            [ref]$tokens,
+            [ref]$parseErrors
+          ) | Out-Null
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host 'PowerShell syntax passed.'
