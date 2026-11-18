@@ -67,3 +67,17 @@ This repository uses **pnpm** workspaces (15 extension packages) with `pnpm-lock
 The release script attempts `pnpm` first and falls back to `corepack pnpm` (included with supported Node.js releases). If neither is available, install pnpm globally with `npm install -g pnpm`. **Do not use `npm ci` for this project.**
 
 If you add or update dependencies later, run `pnpm install` once and commit the updated `pnpm-lock.yaml`. For staging and publishing, the script always uses `--frozen-lockfile` and will refuse to resolve uncommitted dependency changes.
+
+### Git working tree is not clean after validation
+
+The release script intentionally refuses to stage or publish uncommitted source files. `Validate` can still run on a dirty checkout; it now lists the changed Git paths that need attention. `Stage` and `Publish` also list the blocking files rather than only displaying a generic error.
+
+From the local repository, inspect first:
+
+```powershell
+git status --short
+git diff
+git diff --cached
+```
+
+**Do not blindly run `git reset --hard` or `git clean -fd`.** If the changes belong in the next POS version, review, commit, and push them before publishing. If the changes are local-only, use `git stash push --include-untracked -m "local changes before POS publish"` to preserve them temporarily, publish the committed `main` branch, then restore with `git stash pop` when appropriate. Stashed changes are *not* included in the Shopify version; avoid this route if they are needed for deployment. If a tool keeps changing a tracked file during validation, investigate that file rather than bypassing the safety check.
