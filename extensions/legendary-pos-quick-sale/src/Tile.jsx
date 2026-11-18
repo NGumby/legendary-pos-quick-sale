@@ -1,20 +1,15 @@
 import '@shopify/ui-extensions/preact';
 import {render} from 'preact';
 
-const SALE_TITLE = 'Store DVD';
-
-export default async () => {
-  render(<Extension />, document.body);
-};
-
-function Extension() {
-  const {i18n} = shopify;
-
+function Tile() {
   return (
     <s-tile
-      heading={SALE_TITLE}
-      subheading={i18n.translate('tile_subheading')}
+      heading="J4G Quick Sale"
+      subheading="Vendor sales + settings"
+      tone="accent"
       onClick={() => shopify.action.presentModal()}
     />
   );
 }
+
+export default async () => {render(<Tile/>,document.body);};

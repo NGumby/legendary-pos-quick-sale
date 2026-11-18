@@ -66,3 +66,19 @@ required = true
 name = "Settings"
 type = "json"
 required = true
+
+# Editable store-wide POS vendor Quick Sale menu (separate from existing format settings).
+[metaobjects.app.configurable_quick_sales]
+name = "Legendary POS Configurable Quick Sales"
+display_name_field = "name"
+access.admin = "merchant_read_write"
+
+[metaobjects.app.configurable_quick_sales.fields.name]
+name = "Name"
+type = "single_line_text_field"
+required = true
+
+[metaobjects.app.configurable_quick_sales.fields.settings]
+name = "Settings"
+type = "json"
+required = true
