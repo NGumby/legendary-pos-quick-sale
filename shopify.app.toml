@@ -5,6 +5,10 @@ name = "legendary-pos-quick-sale"
 application_url = "https://shopify.dev/apps/default-app-home"
 embedded = true
 
+# Allow POS UI extensions to be discoverable inside Shopify POS.
+[pos]
+embedded = true
+
 [build]
 automatically_update_urls_on_dev = true
 
