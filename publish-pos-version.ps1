@@ -10,7 +10,7 @@
 .EXAMPLE
     .\publish-pos-version.ps1
     .\publish-pos-version.ps1 -Mode Stage -Version j4g-2026-11-18-01
-    .\publish-pos-version.ps1 -Mode Publish -Version j4g-2026-11-18-01
+    .\publish-pos-version.ps1 -Mode Publish -Version j4g-2026-11-18-02
 
 .NOTES
     Requires Node.js 22.12+, npm, Git and Shopify CLI, with Shopify authentication.
