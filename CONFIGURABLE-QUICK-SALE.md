@@ -33,3 +33,27 @@ These entries are defaults **only if** there is no saved configuration. Do not o
 **Permissions:** The POS Settings UI does not currently enforce a staff-role restriction. Until that is implemented, only grant access to this extension to trusted POS staff. Do not rely on hiding a settings button as an authorization check.
 
 **No live changes:** This change is proposed through a PR; it does not deploy or update any live products, prices, or inventory.
+
+## Validate, stage and publish from Windows PowerShell
+
+Use the root script `publish-pos-version.ps1` from a **local checkout** (you can launch it from any directory). It requires Git, Node.js 22.12+, npm, a current Shopify CLI, and Shopify authentication. By default it runs `npm ci`, all `tests/*.test.mjs` tests, config validation for **both** `shopify.app.toml` and `shopify.app.production.toml`, and a production app build. Any nonzero exit code aborts the release.
+
+```powershell
+# Safe checks only; does not create a version
+.\publish-pos-version.ps1
+
+# Validate + create a new, UNRELEASED production app version
+.\publish-pos-version.ps1 -Mode Stage -Version j4g-2026-11-18-01
+
+# Validate + publish a new ACTIVE production app version
+# Requires a clean Git checkout on main and a typed confirmation
+.\publish-pos-version.ps1 -Mode Publish -Version j4g-2026-11-18-01
+```
+
+Omit `-Version` to generate a UTC timestamped version name for Stage/Publish. Pass `-Message '...'` to add an internal Shopify release note. `-SkipInstall` skips `npm ci` only if dependencies are already installed; it never skips tests, config validation or the build.
+
+The script intentionally hardcodes the reviewed **production** app identity (`Legendary POS - Just4Games`, client ID ending in `b3e8a5d`) and always uses `--config production` when building, staging or publishing. The production identity must be deliberately updated in the script if the Shopify app changes. It refuses to stage or publish with uncommitted files. Publishing additionally refuses non-`main` branches and requires the exact `PUBLISH <version>` confirmation. Shopify CLI may request its own confirmation for adding/updating/removing extensions. The script does **not** bypass these prompts or automatically allow deletions.
+
+**Stage vs publish:** `Stage` runs `shopify app deploy --no-release` and does not affect the active app. To release an approved staged version later, use `shopify app release --config production --version <version>`. `Publish` runs `shopify app deploy` and activates that new version for installed stores. **Neither mode deploys an independently hosted web app.** Test the Android POS tile, saved settings, vendor metadata, and T-shirt inventory before activating production.
+
+See [Shopify CLI app deploy](https://shopify.dev/docs/api/shopify-cli/app/app-deploy) and [Shopify CLI app config validate](https://shopify.dev/docs/api/shopify-cli/app/app-config-validate).
