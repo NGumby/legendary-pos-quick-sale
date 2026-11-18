@@ -10,7 +10,7 @@
 .EXAMPLE
     .\publish-pos-version.ps1
     .\publish-pos-version.ps1 -Mode Stage -Version j4g-2026-11-18-01
-    .\publish-pos-version.ps1 -Mode Publish -Version j4g-2026-11-18-01
+    .\publish-pos-version.ps1 -Mode Publish -Version j4g-2026-11-18-02
 
 .NOTES
     Requires Node.js 22.12+, npm, Git and Shopify CLI, with Shopify authentication.
@@ -172,6 +172,15 @@ try {
     Invoke-Checked -Title 'Build the production app/extension bundle' -Executable $shopify -Arguments @(
         'app', 'build', '--config', $ProductionConfigName
     )
+
+    # npm/build tools must not silently modify the release source after the
+    # first Git check. Re-check before any remote version is created.
+    if ($Mode -ne 'Validate') {
+        $checkedCommit = Assert-CleanSource -RequireMain:($Mode -eq 'Publish')
+        if ($checkedCommit -cne $gitCommit) {
+            throw 'Git HEAD changed during validation. Refusing to deploy.'
+        }
+    }
 
     if ($Mode -eq 'Validate') {
         Write-Host ''
