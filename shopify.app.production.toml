@@ -15,6 +15,10 @@ scopes = "read_locations,read_markets,write_metaobjects,write_products"
 [auth]
 redirect_urls = [ "https://shopify.dev/apps/default-app-home/api/auth" ]
 
+# Allow POS UI extensions to be discoverable inside Shopify POS.
+[pos]
+embedded = true
+
 [build]
 automatically_update_urls_on_dev = true
 
