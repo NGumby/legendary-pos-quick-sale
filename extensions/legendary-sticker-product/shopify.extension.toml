@@ -6,7 +6,7 @@ type = "ui_extension"
 name = "Mont-Royal Product Sticker Price"
 uid = "78876dca-a853-4a49-327c-233b1d6203b31a3e04a0"
 handle = "legendary-sticker-product"
-description = "Update the selected product variant price in the exclusive Mont-Royal Retail Market"
+description = "Update Price J4G — Mont-Royal only"
 
 # module: path to the file that contains your extension’s source code
 # target: string that describes where your extension appears in POS
