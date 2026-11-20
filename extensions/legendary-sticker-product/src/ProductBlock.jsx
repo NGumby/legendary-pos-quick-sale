@@ -38,7 +38,15 @@ function ProductStickerBlock() {
         Sticker Price
       </s-button>
       {price
-        ? <s-heading>${'$'}{price.amount} CAD</s-heading>
+        ? <s-heading>{'{price.amount} CAD</s-heading>
+        : <s-text>{status}</s-text>}
+      {price && <s-text tone="subdued">{price.source}</s-text>}
+    </s-pos-block>
+  );
+}
+
+export default async () => { render(<ProductStickerBlock />, document.body); };
+}{price.amount} CAD</s-heading>
         : <s-text>{status}</s-text>}
       {price && <s-text tone="subdued">{price.source}</s-text>}
     </s-pos-block>
