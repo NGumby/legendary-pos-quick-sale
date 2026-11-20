@@ -79,3 +79,45 @@ export async function writeRetailPrice({settings, actualLocationId, shopDomain, 
   }
   return amount;
 }
+
+// Display the actual Mont-Royal market price on the scanned product's POS details.
+// When no location-specific price exists, label the online/base price explicitly.
+export const READ_RETAIL_PRICE = `#graphql
+  query ReadMontRoyalPrice($priceListId: ID!, $variantId: ID!, $priceQuery: String!) {
+    priceList(id: $priceListId) {
+      prices(first: 5, query: $priceQuery) {
+        nodes {
+          variant { id }
+          originType
+          price { amount currencyCode }
+        }
+      }
+    }
+    productVariant(id: $variantId) { displayName price }
+  }`;
+
+export async function readRetailPrice({priceListId, variantId}) {
+  const numericId = String(variantId ?? '').trim();
+  if (!/^\d+$/.test(numericId) || !Number.isSafeInteger(Number(numericId)) || Number(numericId) <= 0)
+    throw new Error('Select a valid Shopify product variant.');
+  if (!/^gid:\/\/shopify\/PriceList\/\d+$/.test(priceListId || ''))
+    throw new Error('The Mont-Royal price list is not configured.');
+  const variantGid = 'gid://shopify/ProductVariant/' + numericId;
+  const data = await adminGraphql(READ_RETAIL_PRICE, {
+    priceListId, variantId: variantGid, priceQuery: 'variant_id:' + numericId,
+  });
+  if (!data?.priceList || !data?.productVariant)
+    throw new Error('Shopify could not load this product or its Mont-Royal catalog.');
+  const listedPrice = data.priceList.prices?.nodes?.find(
+    node => node?.variant?.id === variantGid && node?.price?.currencyCode === 'CAD'
+  );
+  const amount = Number(listedPrice?.price?.amount ?? data.productVariant.price);
+  if (!Number.isFinite(amount) || amount < 0)
+    throw new Error('Shopify did not return a valid product price.');
+  return {
+    amount: amount.toFixed(2),
+    source: listedPrice?.originType === 'FIXED' ? 'Mont-Royal sticker price'
+      : listedPrice ? 'Mont-Royal market price' : 'Base product price (no Mont-Royal override)',
+    title: String(data.productVariant.displayName || '').replace(/ - Default Title$/, ''),
+  };
+}

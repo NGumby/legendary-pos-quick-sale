@@ -1,10 +1,10 @@
 // LEGENDARY-POS-RIGHT-ACTIONS-V8
 import '@shopify/ui-extensions/preact';
 import {render} from 'preact';
-import {useEffect, useState} from 'preact/hooks';
+import {useEffect, useRef, useState} from 'preact/hooks';
 import {appendKeypadDigit, deleteKeypadDigit, parsePriceToCents} from './logic.js';
 import {defaultSettings, loadCachedSettings, loadSettings} from './settings.js';
-import {checkRetailPriceList, writeRetailPrice} from './retail-pricing.js';
+import {readRetailPrice, writeRetailPrice} from './retail-pricing.js';
 
 // Internal, verified Just4Games catalog mapping. Never render these IDs.
 const PRODUCTION_SHOP = 'just4games.myshopify.com';
@@ -54,11 +54,26 @@ function ProductStickerPrice() {
   const [settings, setSettings] = useState(defaultSettings());
   const [price, setPrice] = useState('');
   const [busy, setBusy] = useState(false);
-  const [verified, setVerified] = useState(false);
+  const [currentPrice, setCurrentPrice] = useState(null);
+  const [loadingPrice, setLoadingPrice] = useState(true);
+  const saving = useRef(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [tabletDevice, setTabletDevice] = useState(false);
   const [tabletOverride, setTabletOverride] = useState(null);
+
+  async function refreshPrice() {
+    if (!hasVariant || !atMontRoyal) { setLoadingPrice(false); return; }
+    setLoadingPrice(true);
+    try {
+      const current = await readRetailPrice({priceListId: MONT_ROYAL_PRICE_LIST_ID, variantId});
+      setCurrentPrice(current);
+    } catch (e) {
+      setError('Unable to load current price: ' + explainStickerError(e));
+    } finally { setLoadingPrice(false); }
+  }
+
+  useEffect(() => { refreshPrice(); }, [variantId, locationId, shopDomain]);
 
   useEffect(() => {
     let active = true;
@@ -96,7 +111,6 @@ function ProductStickerPrice() {
 
   function pressKey(key) {
     if (busy) return;
-    setVerified(false);
     setError('');
     setMessage('');
     if (key === 'Clear') setPrice('');
@@ -104,22 +118,9 @@ function ProductStickerPrice() {
     else setPrice(old => appendKeypadDigit(old, key));
   }
 
-  async function verify() {
-    if (busy || !hasVariant || !atMontRoyal) return;
-    setBusy(true); setVerified(false); setError(''); setMessage('');
-    try {
-      await checkRetailPriceList(resolved, locationId, shopDomain);
-      setVerified(true);
-      setMessage('Mont-Royal Retail Market verified for this location.');
-    } catch (e) {
-      setError('Verification failed: ' + explainStickerError(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function save() {
-    if (busy || !hasVariant || !atMontRoyal || !verified || !valid) return;
+    if (saving.current || busy || !hasVariant || !atMontRoyal || !valid) return;
+    saving.current = true;
     setBusy(true); setError(''); setMessage('');
     try {
       const amount = await writeRetailPrice({
@@ -129,13 +130,15 @@ function ProductStickerPrice() {
         variantId,
         cents,
       });
-      setVerified(false);
-      setMessage(`Saved $${amount} CAD for Mont-Royal only. A product already in the cart must be removed and rescanned to use the new catalog price.`);
+      setCurrentPrice({amount, source: 'Mont-Royal sticker price', title: currentPrice?.title || ''});
+      setPrice('');
+      setMessage(`Saved ${amount} CAD for Mont-Royal only. Check the cart total before checkout.`);
       shopify.toast.show('Mont-Royal sticker price saved');
     } catch (e) {
       setError('Could not save price: ' + explainStickerError(e));
     } finally {
       setBusy(false);
+      saving.current = false;
     }
   }
 
@@ -147,21 +150,25 @@ function ProductStickerPrice() {
       {message && <s-banner tone="info" heading={message} />}
     </s-stack>
   );
-  const keypad = (
+  const priceSummary = (
     <s-stack gap="small">
-      <s-heading><s-text type="strong" tone="success">Sticker price: ${price || '0.00'} CAD</s-text></s-heading>
+      <s-text type="strong">{currentPrice?.title || 'Selected Shopify catalog product'}</s-text>
+      <s-text>{loadingPrice ? 'Loading current price…' :
+        currentPrice ? 'Current Mont-Royal price: $' + currentPrice.amount + ' CAD' : 'Current price unavailable'}</s-text>
+      {currentPrice && <s-text tone="subdued">{currentPrice.source}</s-text>}
+    </s-stack>
+  );
+  const keypad = (
+    <s-stack gap="none">
+      <s-heading>New sticker price: {'{price || '0.00'}</s-heading>
       {[0,1,2,3].map(row => (
-        <s-stack key={row} direction="inline" gap="small">
+        <s-stack key={row} direction="inline" gap="small-100">
           {KEYS.slice(row * 3, row * 3 + 3).map(key => (
-            <s-clickable key={key} disabled={busy} onClick={() => pressKey(key)}>
-              <s-box inlineSize={tabletMode ? '88px' : '68px'} blockSize={tabletMode ? '66px' : '54px'}
-                padding="small">
-                <s-stack direction="block" alignItems="center" justifyContent="center" gap="none"
-                  blockSize={tabletMode ? '52px' : '40px'}>
-                  <s-heading>{key}</s-heading>
-                </s-stack>
-              </s-box>
-            </s-clickable>
+            <s-box key={key} inlineSize={tabletMode ? '116px' : '98px'} blockSize="57px">
+              <s-button variant="secondary" disabled={busy} onClick={() => pressKey(key)}>
+                {key === 'Clear' ? 'CLR' : key === 'Back' ? '⌫' : key}
+              </s-button>
+            </s-box>
           ))}
         </s-stack>
       ))}
@@ -170,16 +177,14 @@ function ProductStickerPrice() {
   const actions = (
     <s-stack gap="base">
       {warnings}
-      <s-button variant="secondary" disabled={busy || !hasVariant || !atMontRoyal}
-        loading={busy} onClick={verify}>Verify Mont-Royal catalog</s-button>
-      <s-button variant="primary" disabled={busy || !hasVariant || !atMontRoyal || !verified || !valid}
-        loading={busy} onClick={save}>Save Mont-Royal price</s-button>
-      <s-text>Verification is required before saving. Only the Mont-Royal Retail Market catalog price is changed; the online price stays unchanged.</s-text>
+      <s-button variant="primary" disabled={busy || !hasVariant || !atMontRoyal || !valid}
+        loading={busy} onClick={save}>Save J4G price</s-button>
+      <s-text tone="subdued">The Mont-Royal catalog is verified automatically when saving. Online pricing is unchanged.</s-text>
     </s-stack>
   );
 
   return (
-    <s-page heading="Mont-Royal sticker price" subheading="Location-only product price">
+    <s-page heading="Update Price J4G" subheading="Mont-Royal only · Scanned product">
       <s-button slot="secondary-actions" variant="secondary"
         onClick={() => setTabletOverride(old => old === null ? !tabletDevice : !old)}>
         {tabletMode ? 'Phone layout' : 'Tablet layout'}
@@ -191,7 +196,7 @@ function ProductStickerPrice() {
             <s-stack direction="inline" alignItems="start" justifyContent="start" gap="base">
               <s-box inlineSize="47%" minInlineSize="320px">
                 <s-stack gap="base">
-                  <s-text type="strong">Selected Shopify catalog product</s-text>
+                  {priceSummary}
                   {keypad}
                 </s-stack>
               </s-box>
@@ -199,14 +204,66 @@ function ProductStickerPrice() {
             </s-stack>
           ) : (
             <s-stack gap="base">
-              <s-text type="strong">Selected Shopify catalog product</s-text>
-              {warnings}
+              {priceSummary}
               {keypad}
-              <s-button variant="secondary" disabled={busy || !hasVariant || !atMontRoyal}
-                loading={busy} onClick={verify}>Verify Mont-Royal catalog</s-button>
-              <s-button variant="primary" disabled={busy || !hasVariant || !atMontRoyal || !verified || !valid}
-                loading={busy} onClick={save}>Save Mont-Royal price</s-button>
-              <s-text>Only the Mont-Royal catalog price changes. Online pricing is not affected.</s-text>
+              {actions}
+            </s-stack>
+          )}
+          <s-box blockSize="72px" />
+        </s-stack>
+      </s-box>
+    </s-page>
+  );
+}
+
+export default async () => { render(<ProductStickerPrice />, document.body); };
+}{price || '0.00'}</s-heading>
+      {[0,1,2,3].map(row => (
+        <s-stack key={row} direction="inline" gap="small-100">
+          {KEYS.slice(row * 3, row * 3 + 3).map(key => (
+            <s-box key={key} inlineSize={tabletMode ? '116px' : '98px'} blockSize="57px">
+              <s-button variant="secondary" disabled={busy} onClick={() => pressKey(key)}>
+                {key === 'Clear' ? 'CLR' : key === 'Back' ? '⌫' : key}
+              </s-button>
+            </s-box>
+          ))}
+        </s-stack>
+      ))}
+    </s-stack>
+  );
+  const actions = (
+    <s-stack gap="base">
+      {warnings}
+      <s-button variant="primary" disabled={busy || !hasVariant || !atMontRoyal || !valid}
+        loading={busy} onClick={save}>Save J4G price</s-button>
+      <s-text tone="subdued">The Mont-Royal catalog is verified automatically when saving. Online pricing is unchanged.</s-text>
+    </s-stack>
+  );
+
+  return (
+    <s-page heading="Update Price J4G" subheading="Mont-Royal only · Scanned product">
+      <s-button slot="secondary-actions" variant="secondary"
+        onClick={() => setTabletOverride(old => old === null ? !tabletDevice : !old)}>
+        {tabletMode ? 'Phone layout' : 'Tablet layout'}
+      </s-button>
+      <s-box padding="base">
+        <s-stack gap="base">
+          {tabletMode ? (
+            // Left column: quick price keypad. Right column: ALL actions and status.
+            <s-stack direction="inline" alignItems="start" justifyContent="start" gap="base">
+              <s-box inlineSize="47%" minInlineSize="320px">
+                <s-stack gap="base">
+                  {priceSummary}
+                  {keypad}
+                </s-stack>
+              </s-box>
+              <s-box inlineSize="47%" minInlineSize="300px">{actions}</s-box>
+            </s-stack>
+          ) : (
+            <s-stack gap="base">
+              {priceSummary}
+              {keypad}
+              {actions}
             </s-stack>
           )}
           <s-box blockSize="72px" />
