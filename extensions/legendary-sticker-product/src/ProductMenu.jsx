@@ -8,7 +8,7 @@ function ProductStickerMenu() {
       disabled={!Number.isSafeInteger(variantId) || variantId <= 0}
       onClick={() => shopify.action.presentModal()}
     >
-      Set Mont-Royal sticker price
+      Update Price J4G
     </s-button>
   );
 }
