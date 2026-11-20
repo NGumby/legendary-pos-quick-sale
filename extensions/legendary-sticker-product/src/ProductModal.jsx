@@ -160,7 +160,64 @@ function ProductStickerPrice() {
   );
   const keypad = (
     <s-stack gap="none">
-      <s-heading>New sticker price: ${'$'}{price || '0.00'}</s-heading>
+      <s-heading>New sticker price: {'{price || '0.00'}</s-heading>
+      {[0,1,2,3].map(row => (
+        <s-stack key={row} direction="inline" gap="small-100">
+          {KEYS.slice(row * 3, row * 3 + 3).map(key => (
+            <s-box key={key} inlineSize={tabletMode ? '116px' : '98px'} blockSize="57px">
+              <s-button variant="secondary" disabled={busy} onClick={() => pressKey(key)}>
+                {key === 'Clear' ? 'CLR' : key === 'Back' ? '⌫' : key}
+              </s-button>
+            </s-box>
+          ))}
+        </s-stack>
+      ))}
+    </s-stack>
+  );
+  const actions = (
+    <s-stack gap="base">
+      {warnings}
+      <s-button variant="primary" disabled={busy || !hasVariant || !atMontRoyal || !valid}
+        loading={busy} onClick={save}>Save J4G price</s-button>
+      <s-text tone="subdued">The Mont-Royal catalog is verified automatically when saving. Online pricing is unchanged.</s-text>
+    </s-stack>
+  );
+
+  return (
+    <s-page heading="Update Price J4G" subheading="Mont-Royal only · Scanned product">
+      <s-button slot="secondary-actions" variant="secondary"
+        onClick={() => setTabletOverride(old => old === null ? !tabletDevice : !old)}>
+        {tabletMode ? 'Phone layout' : 'Tablet layout'}
+      </s-button>
+      <s-box padding="base">
+        <s-stack gap="base">
+          {tabletMode ? (
+            // Left column: quick price keypad. Right column: ALL actions and status.
+            <s-stack direction="inline" alignItems="start" justifyContent="start" gap="base">
+              <s-box inlineSize="47%" minInlineSize="320px">
+                <s-stack gap="base">
+                  {priceSummary}
+                  {keypad}
+                </s-stack>
+              </s-box>
+              <s-box inlineSize="47%" minInlineSize="300px">{actions}</s-box>
+            </s-stack>
+          ) : (
+            <s-stack gap="base">
+              {priceSummary}
+              {keypad}
+              {actions}
+            </s-stack>
+          )}
+          <s-box blockSize="72px" />
+        </s-stack>
+      </s-box>
+    </s-page>
+  );
+}
+
+export default async () => { render(<ProductStickerPrice />, document.body); };
+}{price || '0.00'}</s-heading>
       {[0,1,2,3].map(row => (
         <s-stack key={row} direction="inline" gap="small-100">
           {KEYS.slice(row * 3, row * 3 + 3).map(key => (
