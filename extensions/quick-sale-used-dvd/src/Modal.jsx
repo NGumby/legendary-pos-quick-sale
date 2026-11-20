@@ -5,6 +5,19 @@
 // LEGENDARY-POS-RIGHT-ACTIONS-V8
 // LEGENDARY-POS-UI-V5
 import '@shopify/ui-extensions/preact';
+
+// Shopify POS can fail to find a new custom sale when another cart line
+// has the same title. UPC/Title line properties are attached AFTER creation,
+// so give duplicates distinct, human-readable cart titles before adding.
+function nextUniqueCustomSaleTitle(baseTitle, cartLines) {
+  const used = new Set((Array.isArray(cartLines) ? cartLines : [])
+    .map(line => String(line?.title ?? '').trim()));
+  if (!used.has(baseTitle)) return baseTitle;
+  let suffix = 2;
+  while (used.has(`${baseTitle} (${suffix})`)) suffix += 1;
+  return `${baseTitle} (${suffix})`;
+}
+
 import {render} from 'preact';
 import {useEffect, useRef, useState} from 'preact/hooks';
 import {ACTIVE_PRESET_ID, PRESETS} from './presets.js';
@@ -172,7 +185,7 @@ function QuickSale() {
     let uuid = '';
     try {
       if (shopify.cart.current.value?.editable === false) throw new Error('Cart is not editable.');
-      uuid = await shopify.cart.addCustomSale(payload.item);
+      uuid = await shopify.cart.addCustomSale({...payload.item, title: nextUniqueCustomSaleTitle(payload.item.title, shopify.cart.current.value?.lineItems)});
       if (!uuid) throw new Error('Shopify did not return a line item UUID.');
       try {await shopify.cart.addLineItemProperties(uuid, payload.properties);}
       catch (metadataError) {
