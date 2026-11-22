@@ -22,6 +22,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Validate scheduler and daylight-saving rules
+        run: node --test scripts/pos-cash-sessions.test.mjs
       - name: Run scheduled register session operation
         env:
           SHOPIFY_SHOP_DOMAIN: ${{ secrets.POS_SHOP_DOMAIN }}
