@@ -1,0 +1,36 @@
+name: Mont-Royal POS cash sessions
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        type: boolean
+        description: Read only simulation
+        default: true
+jobs:
+  cash-sessions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: mont-royal-pos-cash-sessions
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate scheduler and daylight-saving rules
+        run: node --test scripts/pos-cash-sessions.test.mjs
+      - name: Run scheduled register session operation
+        env:
+          SHOPIFY_SHOP_DOMAIN: ${{ secrets.POS_SHOP_DOMAIN }}
+          SHOPIFY_ADMIN_TOKEN: ${{ secrets.POS_ADMIN_TOKEN }}
+          POS_LOCATION_ID: ${{ secrets.POS_LOCATION_ID }}
+          POS_DEVICE_IDS: ${{ secrets.POS_DEVICE_IDS }}
+          POS_STAFF_MEMBER_ID: ${{ secrets.POS_STAFF_MEMBER_ID }}
+          POS_VERIFIED_CLOSING_COUNTS_JSON: ${{ secrets.POS_VERIFIED_CLOSING_COUNTS_JSON }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: node scripts/pos-cash-sessions.mjs ${{ inputs.dry_run && '--dry-run' || '' }}
